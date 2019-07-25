@@ -1,13 +1,14 @@
+/* eslint-disable class-methods-use-this */
 import * as Yup from 'yup';
-import { startOfHour, parseISO, isBefore, format } from 'date-fns';
+import { startOfHour, parseISO, isBefore, format, subHours } from 'date-fns';
 import pt from 'date-fns/locale/pt';
 import Appointment from '../models/Appointment';
 import User from '../models/User';
 import File from '../models/File';
 import NotificationSchema from '../schemas/Notification';
+import Mail from '../../lib/Mail';
 
 class AppointmentController {
-  // eslint-disable-next-line class-methods-use-this
   async index(req, res) {
     const { page = 1 } = req.query;
 
@@ -36,7 +37,6 @@ class AppointmentController {
     return res.json(appointment);
   }
 
-  // eslint-disable-next-line class-methods-use-this
   async store(req, res) {
     const schema = Yup.object().shape({
       provide_id: Yup.number().required(),
@@ -99,6 +99,43 @@ class AppointmentController {
     await NotificationSchema.create({
       content: `Novo agendamento de ${name} para ${formatDate}`,
       user: provide_id,
+    });
+
+    return res.json(appointment);
+  }
+
+  async delete(req, res) {
+    /* Check if appointment if this user */
+    const appointment = await Appointment.findByPk(req.params.id, {
+      include: [
+        {
+          model: User,
+          as: 'provider',
+          attributes: ['name', 'email'],
+        },
+      ],
+    });
+
+    if (appointment.user_id !== req.userId) {
+      return res.status(400).json({ error: 'You cant delete appointment' });
+    }
+
+    const subDate = subHours(appointment.date, 2);
+
+    if (isBefore(subDate, new Date())) {
+      return res
+        .status(401)
+        .json({ error: 'you can only cancel appointment 2 hours in advance.' });
+    }
+
+    appointment.canceled_at = new Date();
+
+    await appointment.save();
+
+    await Mail.sendMail({
+      to: `${appointment.provider.name}<${appointment.provider.email}>`,
+      subject: 'Agendamento Cancelado',
+      text: 'Você tem uma novo cancelamento',
     });
 
     return res.json(appointment);
