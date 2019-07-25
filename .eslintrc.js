@@ -15,7 +15,7 @@ module.exports = {
   },
   rules: {
     'prettier/prettier': 'error',
-    'class-method-use-this': 'off',
+    'class-method-use-this': 'on',
     'no-param-reassing': 'off',
     camelcase: 'off',
     'no-unused-vars': ['error', { argsIgnorePattern: 'next' }],
