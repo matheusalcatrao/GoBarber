@@ -1,6 +1,6 @@
 /* eslint-disable class-methods-use-this */
 import { startOfDay, endOfDay } from 'date-fns';
-import { Op } from 'sequelize/types';
+import { Op } from 'sequelize';
 import Appointment from '../models/Appointment';
 
 class AvaliableController {
@@ -23,7 +23,7 @@ class AvaliableController {
       },
     });
 
-    return res.json();
+    return res.json(appointment);
   }
 }
 
