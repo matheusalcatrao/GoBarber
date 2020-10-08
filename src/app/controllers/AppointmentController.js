@@ -40,7 +40,7 @@ class AppointmentController {
 
   async store(req, res) {
     const schema = Yup.object().shape({
-      provide_id: Yup.number().required(),
+      provider_id: Yup.number().required(),
       date: Yup.date().required(),
     });
 
@@ -49,10 +49,11 @@ class AppointmentController {
     }
 
     // Check provider is a provider
-    const { provide_id, date } = req.body;
+    const { provider_id, date } = req.body;
+    console.log('provider id', provider_id);
 
     const isProvider = await User.findOne({
-      where: { id: provide_id, provider: true },
+      where: { id: provider_id, provider: true },
     });
 
     if (!isProvider) {
@@ -61,7 +62,7 @@ class AppointmentController {
         .json({ error: 'You can only create appointment with providers' });
     }
 
-    // if (provide_id === req.userId) {
+    // if (provider_id === req.userId) {
     //   return res.status(400).json({ error: 'Provider mark for yourself ' });
     // }
 
@@ -75,7 +76,7 @@ class AppointmentController {
     // Check availability appointment
     const checkAvailability = await Appointment.findOne({
       where: {
-        provide_id,
+        provide_id: provider_id,
         canceled_at: null,
         date: hourStart,
       },
@@ -87,7 +88,7 @@ class AppointmentController {
 
     const appointment = await Appointment.create({
       user_id: req.userId,
-      provide_id,
+      provide_id: provider_id,
       date,
     });
 
@@ -99,7 +100,7 @@ class AppointmentController {
     // Notification appointment provider
     await NotificationSchema.create({
       content: `Novo agendamento de ${name} para ${formatDate}`,
-      user: provide_id,
+      user: provider_id,
     });
 
     return res.json(appointment);
